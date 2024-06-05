@@ -19,7 +19,11 @@ const AgendaSchema = new Schema({
     email: {
         type: String
     },
-    hora: {
+    hora_inicial: {
+        type: String,
+        required: true
+    },
+    hora_final: {
         type: String,
         required: true
     },

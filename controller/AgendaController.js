@@ -15,7 +15,7 @@ export const crearAgenda = async (req, res) => {
         // Obtener el userId del usuario autenticado desde el token
         const userId = req.user.id;
 
-        if (!params.nombre || !params.apellido || !params.descripcion || !params.fecha_atencion || !params.hora) {
+        if (!params.nombre || !params.apellido || !params.descripcion || !params.fecha_atencion || !params.hora_inicial || !params.hora_final) {
             return res.status(400).json({
                 status: "Error",
                 message: "Faltan datos por enviar"
@@ -38,7 +38,8 @@ export const crearAgenda = async (req, res) => {
             apellido: params.apellido,
             descripcion: params.descripcion,
             email: params.email,
-            hora: params.hora,
+            hora_inicial: params.hora_inicial,
+            hora_final:params.hora_final,
             fecha_atencion: params.fecha_atencion,
             userId: userId // Asociar la agenda al usuario logueado
         });
