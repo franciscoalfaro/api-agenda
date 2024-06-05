@@ -4,9 +4,10 @@ import mongoosePaginate from 'mongoose-paginate-v2';
 const { Schema, model } = mongoose;
 
 const AgendaSchema = new Schema({
-    user: {
-        type: Schema.ObjectId,
-        ref: "User"
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required:true
     },
     nombre: {
         type: String,
@@ -17,6 +18,10 @@ const AgendaSchema = new Schema({
     },
     email: {
         type: String
+    },
+    hora: {
+        type: String,
+        required: true
     },
     descripcion: {
         type: String

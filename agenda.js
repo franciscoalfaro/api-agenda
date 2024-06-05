@@ -21,9 +21,13 @@ app.use(express.urlencoded({extended:true}));
 
 //cargar rutas
 import UserRoutes from "./routes/user.js";
+import AgendaRoutes from "./routes/agenda.js";
+
 
 
 app.use("/api/user", UserRoutes);
+app.use("/api/agenda", AgendaRoutes);
+
 
 
 

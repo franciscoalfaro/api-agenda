@@ -70,8 +70,9 @@ export const register = async (req, res) => {
 };
 
 // login
-export const login = (req, res) => {
+export const login = async (req, res) => {
     let params = req.body;
+    console.log(params);
 
     if (!params.email || !params.password) {
         return res.status(400).send({
@@ -79,43 +80,52 @@ export const login = (req, res) => {
             message: "faltan datos por enviar"
         });
     }
-    // buscar a usuario en la BD  .select({"password":0}) oculta la pass del resultado
-    User.findOne({ email: params.email })
-        .then((user) => {
-            if (!user) return res.status(404).json({ status: "Not Found", message: "Usuario no registrado" });
 
-            // comprobar password que llega por el body y con la password del usuario de la BD
-            const pwd = bcrypt.compareSync(params.password, user.password);
+    try {
+        // Buscar usuario en la BD
+        let user = await User.findOne({ email: params.email });
 
-            if (!pwd) {
-                return res.status(400).send({
-                    error: "Error_pass",
-                    message: "No te has identificado de forma correcta."
-                });
-            }
+        if (!user) {
+            return res.status(404).json({ status: "Not Found", message: "Usuario no registrado" });
+        }
 
-            // si usuario con cuenta desactivada se loguea nuevamente se cambia estado de cuenta desactivada=true a cuenta desactivada=false
-            user.eliminado = false;
-            // guardar el usuario actualizado en la BD
-            user.save();
+        // Comprobar password que llega por el body y con la password del usuario de la BD
+        const pwd = bcrypt.compareSync(params.password, user.password);
 
-            // devolver token
-            const token = jwt.createToken(user);
-
-            // devolver datos del usuario
-            return res.status(200).json({
-                status: "success",
-                message: "Te has identificado de forma correcta.",
-                user: {
-                    id: user._id,
-                    name: user.name,
-                },
-                token,
+        if (!pwd) {
+            return res.status(400).send({
+                error: "Error_pass",
+                message: "No te has identificado de forma correcta."
             });
-        }).catch((error) => {
-            if (error) return res.status(500).send({ status: "error", message: "error al obtener el usuario en servidor" });
-            console.log(error);
+        }
+
+        // Si usuario con cuenta desactivada se loguea nuevamente se cambia estado de cuenta desactivada=true a cuenta desactivada=false
+        user.eliminado = false;
+
+        // Guardar el usuario actualizado en la BD
+        await user.save();
+
+        // Devolver token
+      
+        const token = jwt.createToken(user);
+        // Devolver datos del usuario
+        return res.status(200).json({
+            status: "success",
+            message: "Te has identificado de forma correcta.",
+            user: {
+                id: user._id,
+                name: user.name,
+            },
+            token,
         });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send({
+            status: "error",
+            message: "error al obtener el usuario en servidor"
+        });
+    }
 };
 
 //actualizar datos del usuario
