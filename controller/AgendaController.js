@@ -7,10 +7,6 @@ import path from 'path';
 // importar modelo
 import Agenda from '../models/agenda.js';
 
-// importar servicio
-import * as validate from '../helpers/validate.js';
-import * as jwt from '../services/jwt.js';
-
 //end-point
 
 export const crearAgenda = async (req, res) => {
@@ -140,6 +136,43 @@ export const updateAgenda = async (req, res) => {
 
 }
 
-export const listAgenda = async(req, res)=>{
+export const listAgenda = async (req, res) => {
+    try {
+        let page = parseInt(req.params.page) || 1;
+        let itemPerPage = 6;
     
-}
+        const opciones = {
+            page: page,
+            limit: itemPerPage,
+            sort: { create_at: -1 } // Asumiendo que deseas ordenar por fecha_atencion
+        };
+
+        const horarios = await Agenda.paginate({}, opciones);
+
+        if (!horarios || horarios.docs.length === 0) {
+            return res.status(404).json({ 
+                status: "error", 
+                message: "No se han encontrado horarios" 
+            });
+        }
+
+        return res.status(200).send({
+            status: "success",
+            message: "Horarios encontrados",
+            horarios: horarios.docs,
+            page: horarios.page,
+            totalDocs: horarios.totalDocs,
+            totalPages: horarios.totalPages,
+            itemPerPage: horarios.limit,
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            status: 'error',
+            message: 'Error al listar los horarios',
+            error: error.message,
+        });
+    }
+};
+
+
