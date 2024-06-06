@@ -20,12 +20,6 @@ export const crearAgenda = async (req, res) => {
             });
         }
 
-        let dia = params.fecha_atencion;
-        const [year, month, day] = dia.split('-');
-        // Construir la fecha invertida
-        const reversedDate = `${month}-${day}-${year}`;
-        
-
         // Comprobar si el nombre ya tiene una hora asignada para el usuario actual
         const agendaExistente = await Agenda.findOne({ nombre: params.nombre, hora_inicial: params.hora_inicial, fecha_atencion:params.fecha_atencion, userId: userId });
 
@@ -35,6 +29,11 @@ export const crearAgenda = async (req, res) => {
                 message: "El nombre ya tiene una hora asignada para este usuario"
             });
         }
+
+        let dia = params.fecha_atencion;
+        const [year, month, day] = dia.split('-');
+        // Construir la fecha invertida
+        const reversedDate = `${month}-${day}-${year}`;
 
         // Si el nombre no tiene una hora asignada para el usuario actual, crearla asociada a ese usuario
         const nuevaAgenda = await Agenda.create({
