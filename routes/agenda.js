@@ -9,7 +9,7 @@ const router = express.Router();
 router.post("/create",checkAuth, AgendaController.crearAgenda);
 router.delete("/delete/:id",checkAuth, AgendaController.borrarAgenda);
 router.put("/update/:id", checkAuth, AgendaController.updateAgenda);
-router.get("/list/:page?", checkAuth, AgendaController.listAgenda);
+router.get("/list", checkAuth, AgendaController.listAgenda);
 
 
 // Exportar router

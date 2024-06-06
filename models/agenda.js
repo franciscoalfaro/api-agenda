@@ -35,6 +35,10 @@ const AgendaSchema = new Schema({
         default: Date.now,
         required: true
     },
+    organizacion: {
+        type:String
+
+    },
     create_at: {
         type: Date,
         default: Date.now

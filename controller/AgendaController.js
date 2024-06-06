@@ -3,26 +3,40 @@ import mongoosePagination from 'mongoose-paginate-v2';
 
 // importar modelo
 import Agenda from '../models/agenda.js';
+import User from '../models/user.js';
 
 //end-point
 
 export const crearAgenda = async (req, res) => {
     try {
-        let params = req.body;
+        const params = req.body;
 
         // Obtener el userId del usuario autenticado desde el token
         const userId = req.user.id;
 
-        if (!params.nombre || !params.apellido || !params.descripcion || !params.fecha_atencion || !params.hora_inicial || !params.hora_final) {
-            return res.status(400).json({
-                status: "Error",
-                message: "Faltan datos por enviar"
+        // Buscar el usuario en la base de datos y obtener la organización
+        const usuario = await User.findById(userId);
+        if (!usuario) {
+            return res.status(404).json({
+                status: "error",
+                message: "Usuario no encontrado"
             });
         }
+        const organizacion = usuario.organizacion;
 
-        // Comprobar si el nombre ya tiene una hora asignada para el usuario actual
-        const agendaExistente = await Agenda.findOne({ nombre: params.nombre, hora_inicial: params.hora_inicial, fecha_atencion:params.fecha_atencion, userId: userId });
+        // Validar los datos enviados en el cuerpo de la solicitud
+        const requiredFields = ['nombre', 'apellido', 'descripcion', 'fecha_atencion', 'hora_inicial', 'hora_final'];
+        for (const field of requiredFields) {
+            if (!params[field]) {
+                return res.status(400).json({
+                    status: "error",
+                    message: `Falta el campo '${field}' en la solicitud`
+                });
+            }
+        }
 
+        // Verificar si el nombre ya tiene una hora asignada para el usuario actual
+        const agendaExistente = await Agenda.findOne({ nombre: params.nombre, hora_inicial: params.hora_inicial, fecha_atencion: params.fecha_atencion, userId: userId });
         if (agendaExistente) {
             return res.status(409).json({
                 status: "error",
@@ -30,21 +44,21 @@ export const crearAgenda = async (req, res) => {
             });
         }
 
-        let dia = params.fecha_atencion;
+        // Construir la fecha en formato esperado para la base de datos (DD-MM-YYYY)
+        const dia = params.fecha_atencion;
         const [year, month, day] = dia.split('-');
-        // Construir la fecha invertida
-        const reversedDate = `${month}-${day}-${year}`;
+        const reversedDate = `${day}-${month}-${year}`;
 
-        // Si el nombre no tiene una hora asignada para el usuario actual, crearla asociada a ese usuario
+        // Crear una nueva agenda asociada al usuario actual
         const nuevaAgenda = await Agenda.create({
             nombre: params.nombre,
             apellido: params.apellido,
             descripcion: params.descripcion,
-            email: params.email,
             hora_inicial: params.hora_inicial,
-            hora_final:params.hora_final,
+            hora_final: params.hora_final,
             fecha_atencion: reversedDate,
-            userId: userId // Asociar la agenda al usuario logueado
+            userId: userId,
+            organizacion: organizacion // Guardar la organización en la agenda
         });
 
         return res.status(201).json({
@@ -141,21 +155,35 @@ export const updateAgenda = async (req, res) => {
 
 export const listAgenda = async (req, res) => {
     try {
-        // Obtener todos los documentos de la colección Agenda
-        const horarios = await Agenda.find();
+        // Obtener el ID del usuario autenticado desde el token
+        const userId = req.user.id;
 
-        // Verificar si no se encontraron horarios
+        // Buscar el usuario en la base de datos y obtener la organización
+        const usuario = await User.findById(userId);
+        if (!usuario) {
+            return res.status(404).json({
+                status: "error",
+                message: "Usuario no encontrado"
+            });
+        }
+        const organizacion = usuario.organizacion;
+
+        // Obtener todos los documentos de la colección Agenda para la organización del usuario
+        const horarios = await Agenda.find({ organizacion: organizacion });
+
+        // Verificar si no se encontraron horarios para la organización
         if (!horarios || horarios.length === 0) {
-            return res.status(404).json({ 
-                status: "error", 
-                message: "No se han encontrado horarios" 
+            return res.status(404).json({
+                status: "error",
+                message: "No se han encontrado horarios para esta organización"
             });
         }
 
-        // Devolver los horarios encontrados
-        return res.status(200).send({
+        // Devolver los horarios encontrados para la organización del usuario
+        return res.status(200).json({
             status: "success",
             message: "Horarios encontrados",
+            organization: organizacion,
             horarios: horarios
         });
 

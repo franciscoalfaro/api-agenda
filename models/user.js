@@ -31,6 +31,10 @@ const UserSchema = new Schema({
         type: Boolean,
         default: false
     },
+    organizacion: {
+        type: String,
+        default: "peluqueria"
+    },
     create_at: {
         type: Date,
         default: Date.now
