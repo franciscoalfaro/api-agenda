@@ -9,7 +9,6 @@ import Agenda from '../models/agenda.js';
 export const crearAgenda = async (req, res) => {
     try {
         let params = req.body;
-        console.log(params)
 
         // Obtener el userId del usuario autenticado desde el token
         const userId = req.user.id;
@@ -70,7 +69,6 @@ export const borrarAgenda = async (req, res) => {
         const userId = req.user.id;
         // Buscar el artículo y verificar si el usuario logueado es el creador
         const agendaEliminar = await Agenda.findOne({ _id: agendaId, userId: userId });
-        console.log(agendaEliminar)
 
         if (!agendaEliminar) {
             return res.status(404).json({
