@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
-mongoose.set('strictQuery', false)
+import 'dotenv'
 
 export const connection = async() => {
 
     try {
         //conexion mediante url a la BD mongo        
-        await mongoose.connect("mongodb://localhost:27017/agenda");
+        await mongoose.connect(process.env.MONGODB_URI,)
   
         console.log("Connection success agenda")
         
