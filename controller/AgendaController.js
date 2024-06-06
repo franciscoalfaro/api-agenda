@@ -1,7 +1,4 @@
-import fs from 'fs';
-import bcrypt from 'bcrypt';
 import mongoosePagination from 'mongoose-paginate-v2';
-import path from 'path';
 
 
 // importar modelo
