@@ -12,6 +12,8 @@ import Agenda from '../models/agenda.js';
 export const crearAgenda = async (req, res) => {
     try {
         let params = req.body;
+        console.log(params)
+
         // Obtener el userId del usuario autenticado desde el token
         const userId = req.user.id;
 
@@ -22,8 +24,14 @@ export const crearAgenda = async (req, res) => {
             });
         }
 
+        let dia = params.fecha_atencion;
+        const [year, month, day] = dia.split('-');
+        // Construir la fecha invertida
+        const reversedDate = `${day}-${month}-${year}`;
+        
+
         // Comprobar si el nombre ya tiene una hora asignada para el usuario actual
-        const agendaExistente = await Agenda.findOne({ nombre: params.nombre, hora: params.hora, userId: userId });
+        const agendaExistente = await Agenda.findOne({ nombre: params.nombre, hora_inicial: params.hora_inicial, fecha_atencion:params.fecha_atencion, userId: userId });
 
         if (agendaExistente) {
             return res.status(409).json({
@@ -40,7 +48,7 @@ export const crearAgenda = async (req, res) => {
             email: params.email,
             hora_inicial: params.hora_inicial,
             hora_final:params.hora_final,
-            fecha_atencion: params.fecha_atencion,
+            fecha_atencion: reversedDate,
             userId: userId // Asociar la agenda al usuario logueado
         });
 
@@ -139,35 +147,26 @@ export const updateAgenda = async (req, res) => {
 
 export const listAgenda = async (req, res) => {
     try {
-        let page = parseInt(req.params.page) || 1;
-        let itemPerPage = 6;
-    
-        const opciones = {
-            page: page,
-            limit: itemPerPage,
-            sort: { create_at: -1 } // Asumiendo que deseas ordenar por fecha_atencion
-        };
+        // Obtener todos los documentos de la colección Agenda
+        const horarios = await Agenda.find();
 
-        const horarios = await Agenda.paginate({}, opciones);
-
-        if (!horarios || horarios.docs.length === 0) {
+        // Verificar si no se encontraron horarios
+        if (!horarios || horarios.length === 0) {
             return res.status(404).json({ 
                 status: "error", 
                 message: "No se han encontrado horarios" 
             });
         }
 
+        // Devolver los horarios encontrados
         return res.status(200).send({
             status: "success",
             message: "Horarios encontrados",
-            horarios: horarios.docs,
-            page: horarios.page,
-            totalDocs: horarios.totalDocs,
-            totalPages: horarios.totalPages,
-            itemPerPage: horarios.limit,
+            horarios: horarios
         });
 
     } catch (error) {
+        // Manejar errores
         return res.status(500).json({
             status: 'error',
             message: 'Error al listar los horarios',
