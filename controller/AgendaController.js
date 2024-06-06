@@ -27,7 +27,7 @@ export const crearAgenda = async (req, res) => {
         let dia = params.fecha_atencion;
         const [year, month, day] = dia.split('-');
         // Construir la fecha invertida
-        const reversedDate = `${day}-${month}-${year}`;
+        const reversedDate = `${month}-${day}-${year}`;
         
 
         // Comprobar si el nombre ya tiene una hora asignada para el usuario actual
