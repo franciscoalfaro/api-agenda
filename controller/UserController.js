@@ -129,79 +129,66 @@ export const login = async (req, res) => {
 };
 
 //actualizar datos del usuario
-export const update = (req, res) => {
-    //recoger datos del usuario que se actualizara
-    const userIdentity = req.user
-
-
-    let userToUpdate = req.body
-
-    //eliminar campos sobrantes. 
-    delete userToUpdate.iat;
-    delete userToUpdate.exp;
-    delete userToUpdate.role;
-    delete userToUpdate.image;
-
-
-    //comprobar si usuario ya existe
-
-    User.find({
-        $or: [
-            { email: userToUpdate.email.toLowerCase() },
-            { nick: userToUpdate.nick.toLowerCase() },
-        ],
-    }).then(async (users) => {
-        if (!users) return res.status(500).send({ status: "error", message: "no existe el usuario a actualizar" })
-
-        let userIsset = false
-        users.forEach(user => {
-            if (user && user._id != userIdentity.id) userIsset = true
-        })
-
-        if (userIsset) {
-            return res.status(200).send({
-                status: "warning",
-                message: "El usuario/nick ya existe"
-            });
-
-        }
-
-        //si pass cifrarla. 
-        if (userToUpdate.password) {
-            //Cifrar la contraseña con bcrypt
-            let pwd = await bcrypt.hash(userToUpdate.password, 10);
-            userToUpdate.password = pwd;
-        } else {
-            delete userToUpdate.password
-        }
-
-        //se busca el usuario y se actualiza, en el caso de que exista error en el usuario a actualizar lanzara error  caso contrario actualizara
-
-        try {
-            let userUpdate = await User.findByIdAndUpdate(userIdentity.id, userToUpdate, { new: true })
-
-            if (!userUpdate) {
-                return res.status(400).json({ status: "error", message: "error al actualizar" })
-            }
-
-            return res.status(200).json({
-                status: "success",
-                message: "profile update success",
-                user: userToUpdate
-
-
-            });
-
-        } catch (error) {
-            return res.status(500).send({
-                status: "error",
-                message: "error al obtener la informacion en servidor"
-            })
-        }
-
-    })
-
-}
+export const update = async (req, res) => {
+    try {
+      // Recoger datos del usuario que se actualizará
+      const userIdentity = req.user;
+      let userToUpdate = req.body;
+  
+      // Eliminar campos sobrantes
+      delete userToUpdate.iat;
+      delete userToUpdate.exp;
+      delete userToUpdate.role;
+      delete userToUpdate.image;
+  
+      // Comprobar si el usuario ya existe
+      const users = await User.find({
+        $or: [{ email: userToUpdate.email.toLowerCase() }],
+      });
+  
+      if (!users) {
+        return res.status(500).send({ status: "error", message: "No existe el usuario a actualizar" });
+      }
+  
+      let userIsset = false;
+      users.forEach((user) => {
+        if (user && user._id != userIdentity.id) userIsset = true;
+      });
+  
+      if (userIsset) {
+        return res.status(200).send({
+          status: "warning",
+          message: "El usuario ya existe",
+        });
+      }
+  
+      // Si hay contraseña, cifrarla
+      if (userToUpdate.password) {
+        let pwd = await bcrypt.hash(userToUpdate.password, 10);
+        userToUpdate.password = pwd;
+      } else {
+        delete userToUpdate.password;
+      }
+  
+      // Buscar el usuario y actualizarlo
+      const userUpdate = await User.findByIdAndUpdate(userIdentity.id, userToUpdate, { new: true });
+  
+      if (!userUpdate) {
+        return res.status(400).json({ status: "error", message: "Error al actualizar" });
+      }
+  
+      return res.status(200).json({
+        status: "success",
+        message: "Profile update success",
+        user: userUpdate, // Enviar el usuario actualizado
+      });
+    } catch (error) {
+      return res.status(500).send({
+        status: "error",
+        message: "Error al obtener la información en el servidor",
+      });
+    }
+  };
 
 // perfil
 export const profile = async (req, res) => {
@@ -271,7 +258,7 @@ export const upload = async (req, res) => {
 
     //conseguir nombre del archivo
     let image = req.file.originalname
-    console.log(image)
+    console.log('imagen',req.file.originalname)
 
     //obtener extension del archivo
     const imageSplit = image.split("\.");
@@ -287,7 +274,7 @@ export const upload = async (req, res) => {
         //devolver respuesta.        
         return res.status(400).json({
             status: "error",
-            mensaje: "Extension no invalida"
+            mensaje: "Extension no valida"
         })
 
     }
