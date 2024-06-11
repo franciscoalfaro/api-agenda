@@ -16,7 +16,6 @@ import * as jwt from '../services/jwt.js';
 export const register = async (req, res) => {
     // recoger datos de la peticion
     let params = req.body;
-    console.log(params);
     // comprobar datos + validacion
     if (!params.name || !params.email || !params.password) {
         return res.status(400).json({
@@ -72,7 +71,6 @@ export const register = async (req, res) => {
 // login
 export const login = async (req, res) => {
     let params = req.body;
-    console.log(params);
 
     if (!params.email || !params.password) {
         return res.status(400).send({
@@ -258,7 +256,6 @@ export const upload = async (req, res) => {
 
     //conseguir nombre del archivo
     let image = req.file.originalname
-    console.log('imagen',req.file.originalname)
 
     //obtener extension del archivo
     const imageSplit = image.split("\.");
