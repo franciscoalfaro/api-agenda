@@ -44,10 +44,6 @@ export const crearAgenda = async (req, res) => {
             });
         }
 
-        // Construir la fecha en formato esperado para la base de datos (DD-MM-YYYY)
-        const dia = params.fecha_atencion;
-        const [year, month, day] = dia.split('-');
-        const reversedDate = `${day}-${month}-${year}`;
 
         // Crear una nueva agenda asociada al usuario actual
         const nuevaAgenda = await Agenda.create({
@@ -56,7 +52,7 @@ export const crearAgenda = async (req, res) => {
             descripcion: params.descripcion,
             hora_inicial: params.hora_inicial,
             hora_final: params.hora_final,
-            fecha_atencion: reversedDate,
+            fecha_atencion: params.fecha_atencion,
             userId: userId,
             organizacion: organizacion // Guardar la organización en la agenda
         });
@@ -179,12 +175,23 @@ export const listAgenda = async (req, res) => {
             });
         }
 
+        // Formatear la fecha de atención a YYYY-MM-DD antes de devolver los horarios
+        const formattedHorarios = horarios.map(horario => {
+            const fechaAtencion = new Date(horario.fecha_atencion);
+            const formattedFechaAtencion = fechaAtencion.toISOString().split('T')[0];
+
+            return {
+                ...horario._doc,
+                fecha_atencion: formattedFechaAtencion
+            };
+        });
+
         // Devolver los horarios encontrados para la organización del usuario
         return res.status(200).json({
             status: "success",
             message: "Horarios encontrados",
             organization: organizacion,
-            horarios: horarios
+            horarios: formattedHorarios
         });
 
     } catch (error) {
@@ -196,5 +203,6 @@ export const listAgenda = async (req, res) => {
         });
     }
 };
+
 
 
