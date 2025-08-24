@@ -70,60 +70,54 @@ export const register = async (req, res) => {
 
 // login
 export const login = async (req, res) => {
-    let params = req.body;
+  const { email, password } = req.body ?? {};
 
-    if (!params.email || !params.password) {
-        return res.status(400).send({
-            status: "error_404",
-            message: "faltan datos por enviar"
-        });
+  // Validación mínima
+  if (!email || !password || typeof email !== "string" || typeof password !== "string") {
+    return res.status(400).json({
+      status: "error",
+      message: "Credenciales incorrectas"
+    });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    // Comparar contraseña; si no hay usuario usamos un hash dummy para igualar tiempos
+    const pwdMatch = user ? await bcrypt.compare(password, user.password) : false;
+
+    if (!user || !pwdMatch) {
+      return res.status(401).json({
+        status: "error",
+        message: "Credenciales incorrectas"
+      });
     }
 
-    try {
-        // Buscar usuario en la BD
-        let user = await User.findOne({ email: params.email });
-
-        if (!user) {
-            return res.status(404).json({ status: "Not Found", message: "Usuario no registrado" });
-        }
-
-        // Comprobar password que llega por el body y con la password del usuario de la BD
-        const pwd = bcrypt.compareSync(params.password, user.password);
-
-        if (!pwd) {
-            return res.status(400).send({
-                error: "Error_pass",
-                message: "No te has identificado de forma correcta."
-            });
-        }
-
-        // Si usuario con cuenta desactivada se loguea nuevamente se cambia estado de cuenta desactivada=true a cuenta desactivada=false
-        user.eliminado = false;
-
-        // Guardar el usuario actualizado en la BD
-        await user.save();
-
-        // Devolver token
-      
-        const token = jwt.createToken(user);
-        // Devolver datos del usuario
-        return res.status(200).json({
-            status: "success",
-            message: "Te has identificado de forma correcta.",
-            user: {
-                id: user._id,
-                name: user.name,
-            },
-            token,
-        });
-
-    } catch (error) {
-        console.error(error);
-        return res.status(500).send({
-            status: "error",
-            message: "error al obtener el usuario en servidor"
-        });
+    // Reactivar usuario si estaba desactivado
+    if (user.eliminado) {
+      user.eliminado = false;
+      await user.save();
     }
+
+    const token = jwt.createToken(user);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Inicio de sesión exitoso",
+      user: {
+        id: user._id,
+        name: user.name,
+      },
+      token,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error en el servidor"
+    });
+  }
 };
 
 //actualizar datos del usuario

@@ -29,9 +29,6 @@ app.use("/api/user", UserRoutes);
 app.use("/api/agenda", AgendaRoutes);
 
 
-
-
-
 app.listen(puerto, ()=> {
     console.log("Server runing in port :" +puerto)
 })

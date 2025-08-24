@@ -97,7 +97,7 @@ export const borrarAgenda = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             status: 'error',
-            message: 'Error al eliminar el artículo',
+            message: 'Error al eliminar el Agenda',
             error: error.message
         });
 
@@ -150,59 +150,55 @@ export const updateAgenda = async (req, res) => {
 }
 
 export const listAgenda = async (req, res) => {
-    try {
-        // Obtener el ID del usuario autenticado desde el token
-        const userId = req.user.id;
+  try {
+    // Obtener el ID del usuario autenticado desde el token
+    const userId = req.user.id;
 
-        // Buscar el usuario en la base de datos y obtener la organización
-        const usuario = await User.findById(userId);
-        if (!usuario) {
-            return res.status(404).json({
-                status: "error",
-                message: "Usuario no encontrado"
-            });
-        }
-        const organizacion = usuario.organizacion;
-
-        // Obtener todos los documentos de la colección Agenda para la organización del usuario
-        const horarios = await Agenda.find({ organizacion: organizacion });
-
-        // Verificar si no se encontraron horarios para la organización
-        if (!horarios || horarios.length === 0) {
-            return res.status(404).json({
-                status: "error",
-                message: "No se han encontrado horarios para esta organización"
-            });
-        }
-
-        // Formatear la fecha de atención a YYYY-MM-DD antes de devolver los horarios
-        const formattedHorarios = horarios.map(horario => {
-            const fechaAtencion = new Date(horario.fecha_atencion);
-            const formattedFechaAtencion = fechaAtencion.toISOString().split('T')[0];
-
-            return {
-                ...horario._doc,
-                fecha_atencion: formattedFechaAtencion
-            };
-        });
-
-        // Devolver los horarios encontrados para la organización del usuario
-        return res.status(200).json({
-            status: "success",
-            message: "Horarios encontrados",
-            organization: organizacion,
-            horarios: formattedHorarios
-        });
-
-    } catch (error) {
-        // Manejar errores
-        return res.status(500).json({
-            status: 'error',
-            message: 'Error al listar los horarios',
-            error: error.message,
-        });
+    // Buscar el usuario en la base de datos y obtener la organización
+    const usuario = await User.findById(userId);
+    if (!usuario) {
+      return res.status(404).json({
+        status: "error",
+        message: "Usuario no encontrado"
+      });
     }
+
+    const organizacion = usuario.organizacion;
+
+    // Obtener todos los documentos de la colección Agenda para la organización del usuario
+    const horarios = await Agenda.find({ organizacion });
+
+    // Formatear la fecha de atención a YYYY-MM-DD
+    const formattedHorarios = horarios.map(horario => {
+      const fechaAtencion = new Date(horario.fecha_atencion);
+      const formattedFechaAtencion = fechaAtencion.toISOString().split('T')[0];
+
+      return {
+        ...horario._doc,
+        fecha_atencion: formattedFechaAtencion
+      };
+    });
+
+    // Devolver los horarios encontrados (o vacío si no hay)
+    return res.status(200).json({
+      status: "success",
+      message: horarios.length > 0
+        ? "Horarios encontrados"
+        : "No se han encontrado horarios para esta organización",
+      organization: organizacion,
+      horarios: formattedHorarios
+    });
+
+  } catch (error) {
+    // Manejar errores
+    return res.status(500).json({
+      status: 'error',
+      message: 'Error al listar los horarios',
+      error: error.message,
+    });
+  }
 };
+
 
 
 
