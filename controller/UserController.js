@@ -123,41 +123,45 @@ export const login = async (req, res) => {
 //actualizar datos del usuario
 export const update = async (req, res) => {
   try {
-    const userIdentity = req.user;
+    const userId = req.user.id; // usuario autenticado
     const { email, password, ...rest } = req.body;
 
-
-    // Eliminar campos no editables
+    // Preparar objeto de actualización
     const userToUpdate = { ...rest };
-    if (email) userToUpdate.email = email.toLowerCase();
 
-    // Validación: evitar campos sensibles
+    // Eliminar campos no permitidos
     ["iat", "exp", "role", "image"].forEach(field => delete userToUpdate[field]);
 
-    // Validar si el email ya existe en otro usuario
+    // Normalizar email
     if (email) {
-      const existingUser = await User.findOne({ email: email.toLowerCase() });
-      if (existingUser && existingUser._id.toString() !== userIdentity.id) {
+      userToUpdate.email = email.toLowerCase();
+
+      // Verificar si ya existe en otro usuario
+      const existingUser = await User.findOne({ email: userToUpdate.email });
+      if (existingUser && existingUser._id.toString() !== userId) {
         return res.status(409).json({
-          status: "warning",
-          message: "El email ya está registrado por otro usuario",
+          status: "error",
+          message: "El email ya está en uso por otro usuario",
         });
       }
     }
 
-    // Encriptar contraseña si se actualiza
+    // Encriptar contraseña si se envía
     if (password) {
       userToUpdate.password = await bcrypt.hash(password, 10);
     }
 
-    // Actualizar usuario
-    const updatedUser = await User.findByIdAndUpdate( userIdentity.id, userToUpdate, { new: true, runValidators: true, select: "-password" } // oculta password en respuesta
+    // Actualizar usuario autenticado
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      userToUpdate,
+      { new: true, runValidators: true, select: "-password" } // no devolver password
     );
 
     if (!updatedUser) {
       return res.status(404).json({
         status: "error",
-        message: "Usuario no encontrado para actualizar",
+        message: "Usuario no encontrado",
       });
     }
 
