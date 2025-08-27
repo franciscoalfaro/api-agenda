@@ -122,65 +122,58 @@ export const login = async (req, res) => {
 
 //actualizar datos del usuario
 export const update = async (req, res) => {
-    try {
-      // Recoger datos del usuario que se actualizará
-      const userIdentity = req.user;
-      let userToUpdate = req.body;
-  
-      // Eliminar campos sobrantes
-      delete userToUpdate.iat;
-      delete userToUpdate.exp;
-      delete userToUpdate.role;
-      delete userToUpdate.image;
-  
-      // Comprobar si el usuario ya existe
-      const users = await User.find({
-        $or: [{ email: userToUpdate.email.toLowerCase() }],
-      });
-  
-      if (!users) {
-        return res.status(500).send({ status: "error", message: "No existe el usuario a actualizar" });
-      }
-  
-      let userIsset = false;
-      users.forEach((user) => {
-        if (user && user._id != userIdentity.id) userIsset = true;
-      });
-  
-      if (userIsset) {
-        return res.status(200).send({
+  try {
+    const userIdentity = req.user;
+    const { email, password, ...rest } = req.body;
+
+
+    // Eliminar campos no editables
+    const userToUpdate = { ...rest };
+    if (email) userToUpdate.email = email.toLowerCase();
+
+    // Validación: evitar campos sensibles
+    ["iat", "exp", "role", "image"].forEach(field => delete userToUpdate[field]);
+
+    // Validar si el email ya existe en otro usuario
+    if (email) {
+      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingUser && existingUser._id.toString() !== userIdentity.id) {
+        return res.status(409).json({
           status: "warning",
-          message: "El usuario ya existe",
+          message: "El email ya está registrado por otro usuario",
         });
       }
-  
-      // Si hay contraseña, cifrarla
-      if (userToUpdate.password) {
-        let pwd = await bcrypt.hash(userToUpdate.password, 10);
-        userToUpdate.password = pwd;
-      } else {
-        delete userToUpdate.password;
-      }
-  
-      // Buscar el usuario y actualizarlo
-      const userUpdate = await User.findByIdAndUpdate(userIdentity.id, userToUpdate, { new: true });
-  
-      if (!userUpdate) {
-        return res.status(400).json({ status: "error", message: "Error al actualizar" });
-      }
-  
-      return res.status(200).json({
-        status: "success",
-        message: "Profile update success",
-        user: userUpdate, // Enviar el usuario actualizado
-      });
-    } catch (error) {
-      return res.status(500).send({
+    }
+
+    // Encriptar contraseña si se actualiza
+    if (password) {
+      userToUpdate.password = await bcrypt.hash(password, 10);
+    }
+
+    // Actualizar usuario
+    const updatedUser = await User.findByIdAndUpdate( userIdentity.id, userToUpdate, { new: true, runValidators: true, select: "-password" } // oculta password en respuesta
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
         status: "error",
-        message: "Error al obtener la información en el servidor",
+        message: "Usuario no encontrado para actualizar",
       });
     }
-  };
+
+    return res.status(200).json({
+      status: "success",
+      message: "Perfil actualizado correctamente",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Update error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error en el servidor al actualizar el perfil",
+    });
+  }
+};
 
 // perfil
 export const profile = async (req, res) => {

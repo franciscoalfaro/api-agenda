@@ -2,6 +2,7 @@
 import {connection} from './database/connection.js'
 import express from "express"
 import cors from  "cors"
+import 'dotenv'
 
 
 // efectuar conexion a BD
@@ -9,7 +10,7 @@ connection();
 
 //crear conexion a servidor de node
 const app = express();
-const puerto = 3005;
+const puerto = process.env.PORT;
 
 //configurar cors
 app.use(cors());
